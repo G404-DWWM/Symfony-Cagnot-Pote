@@ -262,10 +262,10 @@ L'enregistrement de la campagne est pour le moment autoincrémenté, nous allons
 - La colonne `id` ne possède pas de setter par défaut, nous devons en créer un pour pouvoir assigner un id à la campagne.
 
 ```php
-#[Id]
-#[Column(name: "id", type: "string", length: 32, nullable: false)]
-#[GeneratedValue(strategy: "NONE")]
-private string $id;
+#[ORM\Id]
+#[ORM\GeneratedValue(strategy: "NONE")]
+#[ORM\Column(name: "id", type: "string", length: 32, nullable: false)]
+private ?string $id = null;
 
 public function setCustomId(): self
 {
