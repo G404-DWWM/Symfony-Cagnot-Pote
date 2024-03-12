@@ -1,5 +1,3 @@
-
-
 # 💰 TP d'apprentissage Payetonpote
 
 Vous allez créer un projet de paiement collaboratif. Ce sera une preuve de concept pour un site de type leetchi, mais pourquoi pas aussi pour des paris entre potes, des courses communes, etc.
@@ -7,15 +5,14 @@ Vous allez créer un projet de paiement collaboratif. Ce sera une preuve de conc
 **Analyse des besoins :**
 
 - **En tant qu'utilisateur**, je crée une campagne de financement collaborative avec les champs suivants :
-  - *Nom de la campagne* : 120 caractères maximum
-  - *Contenu de la campagne* : texte libre via [éditeur markdown](https://simplemde.com/)
-  - *Objectif de cagnotte* : nombre qui servira de simple indicateur
-  - *Nom*
-  - *Email*
+
+  - _Nom de la campagne_ : 120 caractères maximum
+  - _Contenu de la campagne_ : texte libre via [éditeur markdown](https://simplemde.com/)
+  - _Objectif de cagnotte_ : nombre qui servira de simple indicateur
+  - _Nom_
+  - _Email_
 
 - **En tant qu'utilisateur**, j'accède à une campagne partagée par l'auteur de la campagne via URL sécurisée et aléatoire.
-
-- **En tant que participant**, je peux modifier le contenu de la campagne et le budget, mais pas le titre.
 
 - **En tant que participant**, je peux payer n'importe quel montant. En plus de ma carte, je suis invité à saisir mon email. Le paiement est ensuite comptabilisé dans la cagnotte et visible dans une liste.
 
@@ -25,7 +22,7 @@ Vous allez créer un projet de paiement collaboratif. Ce sera une preuve de conc
 
 - **Utilisateur :** Un visiteur ayant accès à la page d'accueil.
 
-- **Participant :** Un utilisateur qui participe à une campagne. Participer à une campagne signifie avoir payé ou enregistré une dépense.
+- **Participant :** Un utilisateur qui participe à une campagne. Participer à une campagne signifie avoir effectué un paiement.
 
 - **Campagne :** Un projet de financement créé dans l'application.
 
@@ -33,28 +30,83 @@ Vous allez créer un projet de paiement collaboratif. Ce sera une preuve de conc
 
 - **Objectif de cagnotte :** Nombre indicatif qui n'a aucun effet.
 
-- **Dépenses :** Liste composée de montants en € associés à des participants.
-
 # ✨ Backend Symfony
 
 Vous avez commencé l’intégration du front-end de l’application dans le mini-tp de la maquette, nous allons maintenant développer les fonctionnalités dans le backend PHP.
 
-## 👉 Designer la base de données
+## 👉 Préparer la base de données
 
-Voici le code de la BDD : [[SQL] payetonpote - Pastebin.com.](https://pastebin.com/NMihQkN5)
-Reliez votre bdd en modifiant le .env du projet symfony.
-Prenez le temps d'étudier l'architecture de la BDD. Essayez de visualiser l'interaction entre les tables ainsi que leurs contenus pour le projet.
+Premierement, nous devons relié notre application à une base de données. Nous allons en créer une nomé "payetonpote" dans notre PHPMyAdmin. PAS BESOIN DE CREER DE TABLES, SYMFONY S'EN CHARGERAS !
+Votre projet Symfony contient un fichier .env qui regroupe toutes les variables d'environnement de votre projet. Vous devrez modifier la variable DATABASE_URL pour qu'elle corresponde à votre base de données.
+
+```env
+DATABASE_URL="mysql://root:@localhost:3306/payetonpote"
+```
+
+mysql est le driver de la base de données, root est le nom d'utilisateur, localhost ou 127.0.0.1 est le serveur, 3306 est le port et payetonpote est le nom de la base de données.
+
+[📚 Documentation Symfony sur la configuration de la base de données](https://symfony.com/doc/current/doctrine.html)
 
 ## 🧙‍♂️ Création des Entités
 
-Deux commandes vont suffire à générer les modèles du projet, appelés Entity sur Symfony. Magique !
-La première commande permet de générer les classes Entity. La dernière commande permet de générer les getter et setters.
-Il faut les utiliser dans la console du projet en ouvrant la console directement sur VS Code, par exemple.
+Ce projet va nécessiter la création de trois entités : Campaign, Payment et Participant. Grâce à la console de Symfony, vous allez pouvoir les créer avec cette commande :
 
 ```bash
-php bin/console doctrine:mapping:import App\Entity annotation --path=src/Entity
-php bin/console make:entity --regenerate App
+php bin/console make:entity
 ```
+
+L'entité Campaign devra contenir les champs suivants :
+Pas besoin de créer la propriété id, elle est déjà créée par défaut.
+Mettez tous les champs en nullable true pour simplifier les choses.
+
+- id : string (il faudra changer manuellement le type de données dans le fichier Entity\Campaign.php, enlever le auto-increment et le remplacer par un md5 de 50 caractères dans le setter setId())
+- title : string
+- content : text
+- goal : integer
+- name : string
+- created_at : datetime
+- updated_at : datetime
+
+L'entité Participant devra contenir les champs suivants :
+
+- id : int
+- name : string
+- email : string
+- createdAt : datetime
+- updatedAt : datetime
+- campaign : relation avec Campaign (manyToOne)
+
+L'entité Payment devra contenir les champs suivants :
+
+- id : int
+- amount : float
+- createdAt : datetime
+- updatedAt : datetime
+- participant : relation avec Participant (manyToOne)
+
+Commencez par créer l'entité Campaign, c'est la plus simple. Vous remarquerez un type de données étrange pour le participant, c'est un type de données qui n'existe pas dans PHP, c'est un type de données propre à Doctrine, le ORM de Symfony. Il s'agit d'une relation entre deux entités, ici, une campagne peut avoir plusieurs participants.
+
+Voici un exemple pour l'entité participant :
+
+![alt text](image.png)
+
+## 📦 Migration des entités vers la base de données
+
+Une fois les entités créées, il faut les migrer vers la base de données. Pour cela, vous allez utiliser la commande suivante :
+
+```bash
+php bin/console make:migration
+```
+
+Cette commande va créer un fichier de migration dans le dossier `migrations` de votre projet. Vous pouvez voir le contenu de ce fichier pour comprendre ce que fait Symfony pour vous. Ensuite, vous allez exécuter la migration avec la commande suivante :
+
+```bash
+php bin/console doctrine:migrations:migrate
+```
+
+Cette commande va exécuter le fichier de migration et créer les tables dans votre base de données.
+
+[📚 Documentation Symfony sur les migrations](https://symfony.com/doc/current/doctrine.html#migrations-creating-the-database-tables-schema)
 
 ## 🎛 Création des controllers
 
@@ -67,17 +119,22 @@ php bin/console make:crud
 La console vous demandera l’entité souhaitée, vous choisirez Campaign. Et vous
 nommerez le controller associé avec le même nom.
 
+**Attention :** ne faites que le CRUD de Campaign pour le moment.
+
 Prenez le temps d'étudier tout le code que vous avez généré... c'est bon, vous avez tout
-compris ? Bien, il est temps de passer à l'intégration !
+compris ? (non, c'est normal, ne pas hesiter à poser des questions !) Vous avez maintenant
+un CRUD complet pour votre entité Campaign.
 
-# 🎨 Intégration en Symfony
+vous pouvez également parcourir les vue générées dans le dossier templates/campaign.
 
-Dans cette étape, nous allons profiter du `CampaignController` que vous venez de créer
-pour finaliser les routes et le rendu de toutes les pages. Le travail ici consiste à
-remplacer le code généré de symfony par le code HTML fournis dans les 4 pages du TP.
+# 🎨 Réorganisation de l'intégration
 
-Vous devrez ajouter une page `payment.html.twig` dans le dossier templates/campaign
-et le controller `PaymentController` dans le dossier Controller.
+Dans cette étape, nous allons utiliser le `CampaignController` que vous venez de créer
+pour réorganiser les pages de la maquette dans le projet Symfony. nous n'aurons pas besoin de la page index dans le dossier templates/campaign (nous utiliserons la page index de la maquette). pas besoin non plus de la page delete (disons que nous ne voulons pas que les utilisateurs suppriment des campagnes).
+
+la page show.html.twig du dossier templates/home sera déplacée dans le dossier templates/campaign et il faudra adapter le controller et la vue pour qu'elle fonctionne comme la page show qu'a généré le CRUD de symfony.
+
+Pour ce qui est de la page new.html.twig, elle correspond à la page create de la maquette. Mais les formulaires de symfony sont très différents des formulaires en html classique. Nous allons voir comment les utiliser dans la prochaine étape.
 
 ## Les Formulaires Symfony
 
@@ -90,11 +147,13 @@ Lors de l'affichage de la view `new.html.twig`, une variable contenant le formul
 depuis le controller !
 
 ```php
+// src/Controller/CampaignController.php
+
     #[Route('/new', name: 'app_campaign_new', methods: ['GET', 'POST'])]
     public function new(Request $request, EntityManagerInterface $entityManager): Response
     {
         $campaign = new Campaign();
-        $form = $this->createForm(CampaignType::class, $campaign); // ICI
+        $form = $this->createForm(CampaignType::class, $campaign); //<<<---- ICI !
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
@@ -105,21 +164,21 @@ depuis le controller !
 
         return $this->render('campaign/new.html.twig', [
             'campaign' => $campaign,
-            'form' => $form, // ET LA
+            'form' => $form, //<<<---- ET LA !
         ]);
     }
 ```
 
-Cette variable contient une instance de CampaignType fait avec la méthode de symfony `createForm()`.
+Cette variable contient une instance de CampaignType fait avec la méthode de symfony `createForm()` ainsi que l'objet Campaign, pret à être rempli.
 
-Cette variable est utilisée ici, dans `_form.html.twig`
+Cette variable $form est utilisée ici, dans le include de `_form.html.twig`.
 
 ```twig
 {% block body %}
     <h1>Create new Campaign</h1>
-    {{ include('campaign/_form.html.twig') }}  
+    {{ include('campaign/_form.html.twig') }}
     <a href="{{ path('app_campaign_index') }}">back to list</a>
-{% endblock %} 
+{% endblock %}
 ```
 
 Le formulaire ressemble à ceci pour l'instant :
@@ -131,7 +190,7 @@ Le formulaire ressemble à ceci pour l'instant :
 {{ form_end(form) }}
 ```
 
-Il va falloir y mettre celui qui est fourni dans les pages html de la maquette
+form_start et form_end sont des fonctions de twig qui génèrent les balises form de html. form_widget génère les champs du formulaire en fonction du FormType qui a été créé dans le controller.
 
 CampaignType a été généré automatiquement pour remplir toutes les colonnes de votre table. il
 va falloir le modifier pour enlever les champs que l'on ne souhaite pas remplir comme
@@ -153,14 +212,41 @@ public function buildForm(FormBuilderInterface $builder, array $options): void
 
 Ce "Formbuilder" est la pour générer un objet à partir des champs du formulaire, ce qui nous
 permettra de les valider ou de spécifier des caractéristiques comme des longueurs maximales de
-champs
-À savoir que pour l'affichage dans les templates, nous ne sommes pas obligés d'utiliser la syntax
-{{ form_start(form) }}
+champs.
 
-### À retenir :
+À savoir que nous ne sommes pas obligés d'utiliser le la syntax {{ form_start(form) }} et {{ form_widget(form) }}, nous pouvons écrire le formulaire en html classique, mais il est indispensable d'utiliser la gestion des formulaires de symfony. Sinon vous ne pourrez utiliser les méthodes de validation de symfony et le handleRequest.
 
-Il est indispensable d'utiliser la gestion des formulaires de symfony, mais vous pouvez les écrire
-en html classique.
+```twig
+<form method="post">
+    {{ form_row(form.title) }}
+    {{ form_row(form.content) }}
+    {{ form_row(form.goal) }}
+    {{ form_row(form.name) }}
+    <button class="btn">{{ button_label|default('Save') }}</button>
+</form>
+```
+
+vous pouvez ajouter des attributs html à vos champs de formulaire en utilisant la méthode `attr` dans le `CampaignType`:
+
+```php
+public function buildForm(FormBuilderInterface $builder, array $options): void
+{
+    $builder
+        ->add('title', null, [
+            'attr' => ['class' => 'form-control']
+        ])
+        ->add('content', null, [
+            'attr' => ['class' => 'form-control']
+        ])
+        ->add('goal', null, [
+            'attr' => ['class' => 'form-control']
+        ])
+        ->add('name', null, [
+            'attr' => ['class' => 'form-control']
+        ])
+    ;
+}
+```
 
 # 🕵️‍♂️ Le code Métier
 
@@ -168,21 +254,20 @@ Les bases du projet sont prêtes, nous allons maintenant développer les fonctio
 
 ## Modification de l'Entity Campaign
 
-L'enregistrement de la campagne provoquera une erreur tant qu'on n'indique pas à
-Symfony que :
+L'enregistrement de la campagne est pour le moment autoincrémenté, nous allons changer cela pour que l'id soit généré automatiquement à la création de la campagne avec un md5 de 50 caractères. Nous devons modifier les annotations de la propriété id dans le fichier Entity\Campaign.php.
+
+**Attention :** il faut modifier votre table dans la base de données pour que la colonne id soit de type string et non plus de type int, ainsi que de lui enlever l'auto-increment.
+
 - On souhaite nous même assigner la propriété ID (au lieu de l'auto-increment habituellement utilisé)
-- La colonne `id` ne possède pas de setter donc nous devrons le rajouter manuellement dans le fichier Entity\Campaign.php
+- La colonne `id` ne possède pas de setter par défaut, nous devons en créer un pour pouvoir assigner un id à la campagne.
 
 ```php
-/**
-* @var string
-* @ORM\Column(name="id", type="string", length=32, nullable=false)
-* @ORM\Id
-* @ORM\GeneratedValue(strategy="NONE")
-*/
-private $id;
+#[Id]
+#[Column(name: "id", type: "string", length: 32, nullable: false)]
+#[GeneratedValue(strategy: "NONE")]
+private string $id;
 
-public function setId(string $id): self
+public function setCustomId(): self
 {
     $id = md5(random_bytes(50));
     $this->id = $id;
@@ -192,11 +277,11 @@ public function setId(string $id): self
 
 ## Modification de CampaignController et de la méthode new
 
-Dans le if de cette méthode, nous allons ajouter le setId de campaign :
+Dans la méthode new, nous devons appeler la méthode setCustomId() de l'entité Campaign pour lui assigner un id.
 
 ```php
 if ($form->isSubmitted() && $form->isValid()) {
-    $campaign->setId(); //il faut définir l'id de la campagne !
+    $campaign->setCustomId(); //il faut définir l'id de la campagne !
     $entityManager->persist($campaign);
     $entityManager->flush();
 
@@ -204,18 +289,22 @@ if ($form->isSubmitted() && $form->isValid()) {
 }
 ```
 
-### Une chose importante à savoir : Les formulaires de symfony sont eux aussi des objets à part entière !
+Et voilà, vous avez maintenant une campagne avec un id unique et aléatoire dans votre base de données ! Le tutoriel pas à pas est terminé, vous devrez maintenant développer les fonctionnalités suivantes :
 
 # 🎮 A vous de jouer
 
-## Ajout du formulaire de paiement
+## 🤷 Création de la fonction Payment
 
-Le code html du formulaire de paiement d'une campagne se trouve dans les maquettes du TP.
-vous devrez créer une page `payment.html.twig` qui contiendra ce formulaire.
+Vous allez devoir créer le controller PaymentController qui gerera la création d'un paiement et d'un participant en même temps.
 
-## 🤷 Création de la fonction new dans PaymentController
+vous pouvez utiliser la commande du CRUD mais seul la méthode new devra être conservée.
+Supprimez également les vues inutiles.
+
+Verifier le FormType de Payment qui doit inclure le FormType de Participant (qui n'existe pas encore, à vous de le créer).
 
 Cette fonction devra se faire en plusieurs étapes :
+
+- Création et injection du FormType de paiement mixé avec le formulaire du participant.
 - Récupération du montant du paiement.
 - Instanciation la campagne.
 - Enregistrement du participant.
@@ -226,6 +315,7 @@ Cette fonction devra se faire en plusieurs étapes :
 
 Maintenant que vous savez enregistrer un paiement, il va falloir changer toutes les données en
 dure dans les templates :
+
 - La barre de progression doit correspondre au pourcentage de complétion de l'objectif de la campagne.
 - Le nombre de participants.
 - Le montant total récolté pour une campagne.
@@ -235,6 +325,7 @@ dure dans les templates :
 
 Les utilisateurs du projet doivent désormais avoir la possibilité de ne pas afficher leur identité ou
 le montant de leur paiement s'ils cochent les champs correspondants
+
 - Ces ajouts de fonctionnalités impliquent de faire des modifications dans la base de données.
 
 ## 💸 Fonctionnalités de paiement
