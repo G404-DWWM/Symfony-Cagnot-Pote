@@ -49,7 +49,7 @@ mysql est le driver de la base de données, root est le nom d'utilisateur, local
 
 ## 🧙‍♂️ Création des Entités
 
-Ce projet va nécessiter la création de trois entités : Campaign, Payment et Participant. Grâce à la console de Symfony, vous allez pouvoir les créer avec cette commande :
+Ce projet va nécessiter la création de trois entités : Campaign, Participant et Payment . Grâce à la console de Symfony, vous allez pouvoir les créer avec cette commande :
 
 ```bash
 php bin/console make:entity
