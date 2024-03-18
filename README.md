@@ -82,7 +82,7 @@ L'entité Payment devra contenir les champs suivants :
 - amount : float
 - createdAt : datetime
 - updatedAt : datetime
-- participant : relation avec Participant (manyToOne)
+- participant : relation avec Participant (OneToOne)
 
 Commencez par créer l'entité Campaign, c'est la plus simple. Vous remarquerez un type de données étrange pour le participant, c'est un type de données qui n'existe pas dans PHP, c'est un type de données propre à Doctrine, le ORM de Symfony. Il s'agit d'une relation entre deux entités, ici, une campagne peut avoir plusieurs participants.
 
